@@ -1,4 +1,4 @@
-![alt text](https://github.com/uzielroy/BASS/blob/master/gif/vis.gif?raw=True)
+![alt text](img align="left", src = https://github.com/uzielroy/BASS/blob/master/gif/vis.gif?raw=True)
 
 
 # Bayesian Adaptive Superpixel Segmentation
