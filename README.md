@@ -1,7 +1,8 @@
 <p align="center">
   ![alt text](https://github.com/uzielroy/BASS/blob/master/gif/vis.gif?raw=True)
 </p>
-  ![alt text](https://github.com/uzielroy/BASS/blob/master/gif/vis.gif?raw=True)
+ ![alt text](https://github.com/uzielroy/BASS/blob/master/gif/vis.gif?raw=True)
+
 # Bayesian Adaptive Superpixel Segmentation
 
 This is a placeholder for the code from our ICCV 2019 paper, "Bayesian Adaptive Superpixel Segmentation", co-authored by Roy Uziel, Meitar Ronen, and Oren Freifeld.
