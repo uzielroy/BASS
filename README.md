@@ -11,7 +11,7 @@ This software is released under the MIT License (included with the software). No
 
 ```
 @inproceedings{Uziel:ICCV:2019:BASS,
-  title = {{B}ayesian Adaptive Superpixel Segmentation},
+  title = {Bayesian Adaptive Superpixel Segmentation},
   author = {Roy Uziel and Meitar Ronen and Oren Freifeld},
   booktitle = {ICCV},
   year={2019}
