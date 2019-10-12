@@ -16,8 +16,6 @@ Created on Tue Apr 24 14:45:03 2018
 import argparse
 import cProfile
 import torch
-from scipy.special import gamma, factorial,multigammaln
-from scipy.spatial import Voronoi
 from scipy.spatial import cKDTree
 import gc
 import os
@@ -25,24 +23,17 @@ import Global
 import Help_Functions as my_help
 import Conn_Functions as my_connectivity
 from torch.autograd import Variable
-from colorama import Fore, Back, Style
 import numpy as np
-import matplotlib.pyplot as plt
 import time
 from PIL import Image
 import glob
 import sys
 import csv
-
-plt.switch_backend('agg')
-import cv2
 from numpy.linalg import inv
 from numpy.linalg import det
 import warnings
 from copy import deepcopy
-from torch.distributions import StudentT
 
-warnings.filterwarnings("ignore")
 
 
 """
@@ -52,94 +43,6 @@ warnings.filterwarnings("ignore")
 
 ************************************************************************************************************************************************************
 """
-
-            # Nk.zero_()
-            # Nk.index_add_(0, argmax[:, 0], Global.ones)
-            # Nk = Nk + 0.0000000001
-            # Nk_merged=torch.add(Nk,Nk[left[:,1].long()])
-            #
-            #
-            #
-
-            # merged_LL = merged_LL_b[0:Global.K_C+1].zero_()
-            # X_merged= X_merged_b[0:Global.K_C+1].zero_()
-            # X_father = X_father_b[0:Global.K_C + 1].zero_()
-            # father_LL = father_LL_b[0:Global.K_C + 1].zero_()
-            #
-            # X_merged.index_add_(0,left[argmax[:,0],1].long(),X[:,0:2])
-            # X_merged=X_merged[left[:,1].long()]
-            # X_father.index_add_(0,argmax[:,0],X[:,0:2])
-            #
-            # merged_LL[:,0]= -torch.pow(X_merged[:,0],2)
-            # merged_LL[:,1]= -torch.mul(X_merged[:,0],X_merged[:,1])
-            # merged_LL[:,2]= -merged_LL[:,1]
-            # merged_LL[:,3]= -torch.pow(X_merged[:,1],2)
-            #
-            # father_LL[:, 0] = -torch.pow(X_father[:,0], 2)
-            # father_LL[:, 1] = -torch.mul(X_father[:,0], X_father[:,1])
-            # father_LL[:, 2] = -father_LL[:, 1]
-            # father_LL[:, 3] = -torch.pow(X_father[:,1], 2)
-
-
-            # a_prior_merged = torch.mul(torch.pow(2, Global.split_lvl[0:Nk_merged.shape[0]] + 1), Global.A_prior)
-            # psi_prior_merged = torch.mul(torch.pow(a_prior_merged, 2).unsqueeze(1),torch.eye(2).reshape(-1, 4).cuda())
-            # ni_prior_merged = (Global.C_prior * a_prior_merged) - 3
-            #
-            # merged_LL.index_add_(0, left[argmax[:,0],1].long(), XXT)
-            # merged_LL=merged_LL[left[:,1].long()]
-            # father_LL.index_add_(0,argmax[:,0],XXT)
-            # ni_merged=torch.add(ni_prior_merged,Nk_merged)[0:merged_LL.shape[0]]
-            # ni_father=torch.add(Global.ni_prior,Nk)[0:father_LL.shape[0]]
-            # psi_merged=torch.add(merged_LL.reshape(-1,4),psi_prior_merged)[0:ni_merged.shape[0]]
-            # psi_father=torch.add(father_LL.reshape(-1,4),Global.psi_prior)[0:ni_father.shape[0]]
-            #
-            # ni_merged[(ni_merged <= 1).nonzero()] = 2.00000001
-            # ni_father[(ni_father <= 1).nonzero()] = 2.00000001
-            #
-            # gamma_merged = torch.mvlgamma((ni_merged / 2), 2)
-            # gamma_father = torch.mvlgamma((ni_father / 2), 2)
-            #
-            #
-            #
-            # det_psi_merged=0.00000001+torch.add(torch.mul(psi_merged[:, 0], psi_merged[:, 3]),-torch.mul(psi_merged[:, 1], psi_merged[:, 2]))
-            # det_psi_father=0.00000001+torch.add(torch.mul(psi_father[:, 0], psi_father[:, 3]),-torch.mul(psi_father[:, 1], psi_father[:, 2]))
-            # det_psi_merged[(det_psi_merged <= 0).nonzero()] = 0.00000001
-            # det_psi_father[(det_psi_father <= 0).nonzero()] = 0.00000001
-            #
-            # det_psi_prior_merged=0.00000001+torch.add(torch.mul(psi_prior_merged[:, 0], psi_prior_merged[:, 3]),-torch.mul(psi_prior_merged[:, 1], psi_prior_merged[:, 2]))
-            # det_psi_prior_father=0.00000001+torch.add(torch.mul(Global.psi_prior[:, 0], Global.psi_prior[:, 3]),-torch.mul(Global.psi_prior[:, 1], Global.psi_prior[:, 2]))
-            # det_psi_prior_merged[(det_psi_prior_merged <= 0).nonzero()] = 0.00000001
-            # det_psi_prior_father[(det_psi_prior_father <= 0).nonzero()] = 0.00000001
-            #
-            #
-            # ni_prior_merged[(ni_prior_merged <= 1).nonzero()] = 2.00000001
-            # Global.ni_prior[(Global.ni_prior <= 1).nonzero()] = 2.00000001
-            # gamma_prior_merged=torch.mvlgamma(ni_prior_merged/2,2)
-            # gamma_prior_father=torch.mvlgamma(Global.ni_prior /2,2)
-            #
-            # ll_merged= -(torch.mul(torch.log((Global.PI)),(Nk_merged)))+ \
-            #          torch.add(gamma_merged,-gamma_prior_merged) + \
-            #          torch.mul(torch.log(det_psi_prior_merged), (ni_prior_merged * 0.5)) - \
-            #          torch.mul(torch.log(det_psi_merged),(ni_merged * 0.5))+\
-            #          torch.log(Nk_merged[0:merged_LL.shape[0]])
-            #
-            # ll_father= -(torch.mul(torch.log((Global.PI)),(Nk)))+ \
-            #            torch.add(gamma_father,-gamma_prior_father) + \
-            #            torch.mul(torch.log((det_psi_father)), Global.ni_prior * 0.5) - \
-            #            torch.mul(torch.log(det_psi_father),ni_father * 0.5) +\
-            #            torch.log(Nk[0:father_LL.shape[0]])
-            #
-            # ll_merged_min=torch.min(ll_merged[1:ll_merged.shape[0]].masked_select(1-torch.isinf(ll_merged[1:ll_merged.shape[0]])-torch.isnan(ll_merged[1:ll_merged.shape[0]])))
-            # ll_merged_max=torch.max(ll_merged[1:ll_merged.shape[0]].masked_select(1-torch.isinf(ll_merged[1:ll_merged.shape[0]])-torch.isnan(ll_merged[1:ll_merged.shape[0]])))
-            # ll_father_min=torch.min(ll_father[1:ll_father.shape[0]].masked_select(1-torch.isinf(ll_father[1:ll_father.shape[0]])-torch.isnan(ll_father[1:ll_father.shape[0]])))
-            # ll_father_max=torch.max(ll_father[1:ll_father.shape[0]].masked_select(1-torch.isinf(ll_father[1:ll_father.shape[0]])-torch.isnan(ll_father[1:ll_father.shape[0]])))
-            #
-            # ll_merged_min = torch.min(ll_merged_min, ll_father_min)
-            # ll_merged_max = torch.max(ll_merged_max, ll_father_max)
-            #
-            # ll_merged=torch.div(torch.add(ll_merged,-ll_merged_min),(ll_merged_max-ll_merged_min))*(-1000)+0.1
-            # ll_father = torch.div(torch.add(ll_father, -ll_merged_min), (ll_merged_max - ll_merged_min))*(-1000) + 0.1
-            # #
 
 
 
@@ -160,26 +63,26 @@ def Merge(X,argmax,Nk,it_merge,temp_b,m_v_father_b,m_v_sons_b,b_father_b,b_sons_
         left[:,0]=torch.arange(0,Global.K_C+1)
         left[:,0]=Global.N_index[0:Global.K_C+1]
 
-
+        it_merge = 0
         if(it_merge%4==0):
             ind_left = torch.masked_select(Global.inside_padded, (
-                        (padded_matrix[Global.inside_padded] != padded_matrix[Global.inside_padded - 1]) + (
-                            padded_matrix[Global.inside_padded - 1] > 0)) == 2)
+                        (padded_matrix[Global.inside_padded] != padded_matrix[Global.inside_padded - 1]) & (
+                            padded_matrix[Global.inside_padded - 1] > 0)))
             left[padded_matrix[ind_left],1] = padded_matrix[ind_left - 1].int()
         if (it_merge%4 == 1):
             ind_left = torch.masked_select(Global.inside_padded, (
-                    (padded_matrix[Global.inside_padded] != padded_matrix[Global.inside_padded + 1]) + (
-                    padded_matrix[Global.inside_padded + 1] > 0)) == 2)
+                    (padded_matrix[Global.inside_padded] != padded_matrix[Global.inside_padded + 1]) &(
+                    padded_matrix[Global.inside_padded + 1] > 0)))
             left[padded_matrix[ind_left], 1] = padded_matrix[ind_left + 1].int()
         if (it_merge%4 == 2):
             ind_left = torch.masked_select(Global.inside_padded, (
-                    (padded_matrix[Global.inside_padded] != padded_matrix[Global.inside_padded - (Global.WIDTH+2)]) + (
-                    padded_matrix[Global.inside_padded - (Global.WIDTH+2)] > 0)) == 2)
+                    (padded_matrix[Global.inside_padded] != padded_matrix[Global.inside_padded - (Global.WIDTH+2)]) & (
+                    padded_matrix[Global.inside_padded - (Global.WIDTH+2)] > 0)))
             left[padded_matrix[ind_left], 1] = padded_matrix[ind_left - (Global.WIDTH+2)].int()
         if (it_merge%4 == 3):
             ind_left = torch.masked_select(Global.inside_padded, (
-                    (padded_matrix[Global.inside_padded] != padded_matrix[Global.inside_padded + (Global.WIDTH+2)]) + (
-                    padded_matrix[Global.inside_padded + (Global.WIDTH+2)] > 0)) == 2)
+                    (padded_matrix[Global.inside_padded] != padded_matrix[Global.inside_padded + (Global.WIDTH+2)]) & (
+                    padded_matrix[Global.inside_padded + (Global.WIDTH+2)] > 0)))
             left[padded_matrix[ind_left], 1] = padded_matrix[ind_left + (Global.WIDTH+2)].int()
 
         ind_left,_=torch.sort(ind_left)
@@ -218,7 +121,6 @@ def Merge(X,argmax,Nk,it_merge,temp_b,m_v_father_b,m_v_sons_b,b_father_b,b_sons_
         it_merge=it_merge+1
 
 
-
         for i in range(0, Global.K_C + 1):
             val = left[i, 1]
             if ((val > 0 )and (val!=i)):
@@ -237,7 +139,6 @@ def Merge(X,argmax,Nk,it_merge,temp_b,m_v_father_b,m_v_sons_b,b_father_b,b_sons_
         Nk = Nk + 0.0000000001
 
         Nk_merged=torch.add(Nk,Nk[left[:,1].long()])
-        # Nk_merged[left[:,1].long()]=Nk_merged[left[:,0].long()]
         alpha=torch.Tensor([float(1000000)]).cuda()
         beta=torch.Tensor([Global.int_scale*alpha+Global.int_scale]).cuda()
         v_father = Nk
@@ -300,9 +201,6 @@ def Merge(X,argmax,Nk,it_merge,temp_b,m_v_father_b,m_v_sons_b,b_father_b,b_sons_
         ll_2_merged = torch.div(torch.add(ll_2_merged, -ll_merged_min), (ll_merged_max - ll_merged_min)) * (-10000) + 0.1
         ll_2_father = torch.div(torch.add(ll_2_father, -ll_merged_min), (ll_merged_max - ll_merged_min))*(-10000) + 0.1
 
-
-
-
         gamma_alpha_2=torch.mvlgamma(torch.Tensor([Global.ALPHA_MS2/2]).cuda(),1)
         gamma_alpha=torch.mvlgamma(torch.Tensor([Global.ALPHA_MS2]).cuda(),1)
 
@@ -336,15 +234,12 @@ def Merge(X,argmax,Nk,it_merge,temp_b,m_v_father_b,m_v_sons_b,b_father_b,b_sons_
         Global.split_lvl[left[idx_rand,1].long()]=Global.split_lvl[idx_rand]
 
 def Split(X,XXT,argmax,Nk,sons_LL_b,X_sons_b,X_father_b,father_LL_b,C1,c1_temp,clusters_LR,it_split,m_v_sons_b,m_v_father_b,b_sons_b,b_father_b,SigmaXY_b,SigmaXY_i_b,SIGMAxylab_b,Nk_b,X1_b,X2_00_b,X2_01_b,X2_11_b):
-    # argmax[:, 1],sub_clusters,clusters_LR=my_connectivity.Split(argmax[:,0].reshape(Global.HEIGHT,-1),argmax[:,0].reshape(Global.HEIGHT,-1), C1, c1_temp,Global.N_index[1:Global.K_C+1],clusters_LR,it_split)
     it_split=it_split+1
     K_C_Split=torch.max(argmax[:,1])+1
     if(Nk.shape[0]>K_C_Split):
         K_C_Split=Nk.shape[0]
     Nk_s = torch.zeros(K_C_Split).float().cuda()
     Nk.zero_()
-    Global.C_prior = 49 + (torch.mul(0, -Global.split_lvl[0:Nk_s.shape[0]]))
-    # Global.C_prior = 1550
     a_prior_sons = Nk_s
     Global.psi_prior_sons = torch.mul(torch.pow(a_prior_sons, 2).unsqueeze(1), torch.eye(2).reshape(-1, 4).cuda())
     Global.ni_prior_sons = (Global.C_prior * a_prior_sons) - 3
@@ -515,68 +410,19 @@ def Split(X,XXT,argmax,Nk,sons_LL_b,X_sons_b,X_father_b,father_LL_b,C1,c1_temp,c
     original=torch.where(pixels_to_change==1,argmax[:, 1],argmax[:,0])
 
 
-    # r_ik2 = argmax[:, 0].cpu().numpy()
-    # r_ik2 = np.reshape(r_ik2, (Global.HEIGHT, Global.WIDTH)).astype(int)
     return argmax,Nk,original
-    #
-    #
-    #
-    #
-    # left = torch.zeros(Global.K_C + 1, 2).int().cuda()
-    # left[:, 0] = Global.N_index[0:Global.K_C + 1]
-    # left[idx_rand,1]=1
-    # pixels_to_change = left[argmax[:,0],1]
-    #
-    # original=torch.where(pixels_to_change==1,argmax[:, 1],argmax[:,0])
-    #
-    # left2 = torch.zeros(Global.K_C*2 + 1, 2).int().cuda()
-    # left2[:, 0] = Global.N_index[0:Global.K_C*2 + 1]
-    # left2[:, 1] = Global.N_index[0:Global.K_C*2 + 1]
-    # left2[clusters_LR[idx_rand,1].long(),1]=Global.N_index[0:idx_rand.shape[0]].int()+Global.K_C+1
-    # original=left2[original,1]
-    #
-    # Global.split_lvl[idx_rand]=Global.split_lvl[idx_rand]*0.5
-    # Global.split_lvl[left2[clusters_LR[idx_rand, 1].long(), 1].long()]=Global.split_lvl[idx_rand]
-    #
-    #
-    # Global.K_C=torch.max(original.reshape(-1)).int()
-    #
-    #
-    # SigmaXY = SigmaXY_b[0:Global.K_C + 1]
-    # SigmaXY_i = SigmaXY_i_b[0:Global.K_C + 1]
-    #
-    # SIGMAxylab = SIGMAxylab_b[0:Global.K_C + 1]
-    # Nk = Nk_b[0:Global.K_C + 1]
-    # X1 = X1_b[0:Global.K_C + 1]
-    #
-    # X2_00 = X2_00_b[0:Global.K_C + 1]
-    # X2_01 = X2_01_b[0:Global.K_C + 1]
-    # X2_11 = X2_11_b[0:Global.K_C + 1]
-    #
-    # prev_r_ik_max = argmax[:, 0].clone()
-    # argmax[:,0]=original.reshape(-1)
-    #
-    # r_ik2 = argmax[:, 0].cpu().numpy()
-    # r_ik2 = np.reshape(r_ik2, (Global.HEIGHT, Global.WIDTH)).astype(int)
 
 
 
 
-def KmeansSplitMerge(X,loc):
+def Bass(X, loc):
     if(Global.Print):
         print("CPU->GPU")
-    #global SIGMA
     global SIGMA1
     global SIGMA2
     global SIGMAxylab
     global SIGMAxylab_s
     _=1
-    # SIGMA = np.array([[Global.loc_scale, 0., 0., 0., 0., 0.],
-    #                   [0., Global.loc_scale, 0., 0., 0., 0.],
-    #                   [0., 0., Global.int_scale, 0., 0., 0.],
-    #                   [0., 0., 0., Global.int_scale, 0., 0.],
-    #                   [0., 0., 0., 0., Global.int_scale, 0.],
-    #                   [0., 0., 0., 0., 0., Global.opt_scale]])
 
     SIGMA1 = np.array([[Global.loc_scale, 0., 0., 0., 0.],
                        [0., Global.loc_scale, 0., 0., 0.],
@@ -586,7 +432,6 @@ def KmeansSplitMerge(X,loc):
 
 
     X = torch.from_numpy(X).cuda().float()
-    # SIGMA = torch.from_numpy(SIGMA).cuda().float()
     SIGMA1 = torch.from_numpy(SIGMA1).cuda().float()
     loc = torch.from_numpy(loc).cuda().float()
 
@@ -605,8 +450,7 @@ def KmeansSplitMerge(X,loc):
 
     SigmaXY_temp = torch.zeros((Global.N * Global.neig_num * Global.D_Inv)).cuda().float()
     logdet_temp = torch.zeros((Global.N * Global.neig_num)).cuda()
-    SigmaXY = torch.zeros((Global.K_C + 1, Global.D_Inv)).cuda().float()
-    SigmaXY_i = torch.zeros((Global.K_C + 1, Global.D_Inv)).cuda().float()
+
 
     SigmaXY_s = torch.zeros(((Global.K_C + 1)*2, Global.D_Inv)).cuda().float()
     SigmaXY_i_s = torch.zeros((Global.K_C + 1)*2, Global.D_Inv).cuda().float()
@@ -623,14 +467,9 @@ def KmeansSplitMerge(X,loc):
     SIGMAxylab_s[:, 4, 4] = Global.int_scale
 
 
-    Nk = torch.zeros(Global.K_C + 1).float().cuda()
     Nk_s= torch.zeros((Global.K_C + 1)*2).float().cuda()
-    X1 = torch.zeros(Global.K_C + 1, Global.D_).float().cuda()
     X1_s=torch.zeros((Global.K_C+1)*2,Global.D_).float().cuda()
 
-    X2_00 = torch.zeros(Global.K_C + 1).float().cuda()
-    X2_01 = torch.zeros(Global.K_C + 1).float().cuda()
-    X2_11 = torch.zeros(Global.K_C + 1).float().cuda()
 
     X2_00_s = torch.zeros((Global.K_C + 1)*2).float().cuda()
     X2_01_s = torch.zeros((Global.K_C + 1)*2).float().cuda()
@@ -678,21 +517,17 @@ def KmeansSplitMerge(X,loc):
     m_v_father_b = torch.zeros(Global.N + 1, 3).float().cuda()
     b_sons_b = torch.zeros(Global.N + 1, 3).float().cuda()
     b_father_b = torch.zeros(Global.N + 1, 3).float().cuda()
-
-    merged_LL_b = torch.zeros(Global.N + 1, 4).float().cuda()
-    X_merged_b = torch.zeros(Global.N + 1, 2).float().cuda()
-    temp_b = torch.zeros((Global.K_C*100), 2000).long().cuda() #BUG!
+    temp_b = torch.zeros((Global.K_C*100), 2000).long().cuda()
 
     "End Creating Buffers"
 
 
-    r_ik, pi = InitKmeansSP()
+    r_ik, pi = InitBass()
     #while(1):
 
     Global.K_C=Global.K_C_ORIGINAL
     SigmaXY = SigmaXY_b[0:Global.K_C + 1]
     SigmaXY_i = SigmaXY_i_b[0:Global.K_C + 1]
-    temp=temp_b[0:Global.K_C+1]
 
     SIGMAxylab = SIGMAxylab_b[0:Global.K_C + 1]
     Nk = Nk_b[0:Global.K_C + 1]
@@ -703,26 +538,19 @@ def KmeansSplitMerge(X,loc):
     X2_11 = X2_11_b[0:Global.K_C + 1]
 
 
-    # OR : last split / merge step
-    it_limit=250
+    it_limit=150
 
-    # OR : last iter
-    maxIt = 290
+    maxIt = 190
 
-    # OR : Actually not so sure about them.. should be ok I guess...
     fixIt_L = 255
     fixIt_H = 275
     it = 0
-    split_turn=1
 
     argmax = torch.from_numpy(r_ik).cuda().unsqueeze(1).repeat(1,2)
     argmax_start=argmax.clone()
 
     argmax=argmax_start.clone()
-    # pr=cProfile.Profile()
-    #pr.enable()
-    count_split=0
-    count_merge=0
+
     print("Start")
     torch.cuda.synchronize()
     start = torch.cuda.Event(enable_timing=True)
@@ -733,8 +561,7 @@ def KmeansSplitMerge(X,loc):
         if (it % 20 == 0):
             if(Global.Print):
                 print("It :", it)
-        # C1, logdet,SigmaXY, SigmaXY_i, Nk = EstimateSP_2Frames(X,loc, argmax, SigmaXY, SigmaXY_i, Nk, X1, X2_00, X2_01,X2_11,init,Nk_s,X1_s,X2_00_s,X2_01_s,X2_11_s,SigmaXY_s,SigmaXY_i_s,it,maxIt)#Nk_r,X1_r, X2_00_r, X2_01_r,X2_11_r,SigmaXY_r,SigmaXY_l,SigmaXY_i_r,SigmaXY_i_l)  # M-Step
-        C1, logdet = EstimateSP_2Frames(X,loc, argmax, SigmaXY, SigmaXY_i, Nk, X1, X2_00, X2_01,X2_11,init,Nk_s,X1_s,X2_00_s,X2_01_s,X2_11_s,SigmaXY_s,SigmaXY_i_s,it,maxIt)#Nk_r,X1_r, X2_00_r, X2_01_r,X2_11_r,SigmaXY_r,SigmaXY_l,SigmaXY_i_r,SigmaXY_i_l)  # M-Step
+        C1, logdet = M_Step(X, loc, argmax, SigmaXY, SigmaXY_i, Nk, X1, X2_00, X2_01, X2_11, init, Nk_s, X1_s, X2_00_s, X2_01_s, X2_11_s, SigmaXY_s, SigmaXY_i_s, it, maxIt)#Nk_r,X1_r, X2_00_r, X2_01_r,X2_11_r,SigmaXY_r,SigmaXY_l,SigmaXY_i_r,SigmaXY_i_l)  # M-Step
 
         N_ = X.shape[0]
         pi_t = torch.div(torch.mul(Nk, (1 - Global.PI_0)), (N_ - Nk[0]))
@@ -742,7 +569,7 @@ def KmeansSplitMerge(X,loc):
 
         if(it>fixIt_L and it%25==1 and it<fixIt_H):
             real_K_C=torch.sum((Nk>2).int())
-        if (( (it) % 50 == 1 and (it<it_limit) and (it>60)) or ( (it) % 25 == 1 and it>fixIt_L and it<fixIt_H and real_K_C>Global.K_C_HIGH)) and (Global.split_merges==True):
+        if (( (it) % 40 == 1 and (it<it_limit) and (it>60)) or ( (it) % 25 == 1 and it>fixIt_L and it<fixIt_H and real_K_C>Global.K_C_HIGH)) and (Global.split_merges==True):
 
             if(it>it_limit):
                 maxIt+=25
@@ -776,16 +603,14 @@ def KmeansSplitMerge(X,loc):
 
 
 
-        FindClosestClusterSP_2Frames(X, logdet_temp, c1_temp, pi_temp,  SigmaXY_temp.reshape(-1, Global.neig_num, Global.D_Inv), X_C_SIGMA, sum_buffer,c_idx,c_idx_9,c_idx_25,distances_buffer,r_ik_5,neig_buffer,sumP_buffer,X_C_buffer,X_C_SIGMA_buf) #TODO: Check  r_ik_5 pointer
+        E_Step(X, logdet_temp, c1_temp, pi_temp, SigmaXY_temp.reshape(-1, Global.neig_num, Global.D_Inv), X_C_SIGMA, sum_buffer, c_idx, c_idx_9, c_idx_25, distances_buffer, r_ik_5, neig_buffer, sumP_buffer, X_C_buffer, X_C_SIGMA_buf) #TODO: Check  r_ik_5 pointer
         r_ik_5 = r_ik_5.view(-1, Global.neig_num)
 
 
 
         if(Global.HARD_EM==True):
             argmax[:,0] = my_connectivity.Change_pixel(prev_r_ik_max, r_ik_5, index2_buffer, r_ikNew_buffer, it % 4, c_idx, _,range_conn)#,split_prev_r_ik_max,c_idx_split,r_ik_5_s)
-        if (( (it+25)%50   == 1  and it>120 and it<it_limit ) or (it%25==1 and it>fixIt_L and it<fixIt_H and real_K_C<Global.K_C_LOW) ) and (Global.split_merges==True) :
-            # r_ik2 = argmax[:, 0].cpu().numpy()
-            # r_ik2 = np.reshape(r_ik2, (Global.HEIGHT, Global.WIDTH)).astype(int)
+        if (( (it+20)%40   == 1  and it>60 and it<it_limit ) or (it%25==1 and it>fixIt_L and it<fixIt_H and real_K_C<Global.K_C_LOW) ) and (Global.split_merges==True) :
 
             if(it>it_limit):
                 maxIt+=25
@@ -829,193 +654,118 @@ def KmeansSplitMerge(X,loc):
             prev_r_ik_max = r_ik_5.argmax(1)
             prev_r_ik_max=torch.take(c_idx,torch.add(prev_r_ik_max,range_conn))
 
-        if(0):
-            r_ik_for_print = argmax[:,0].cpu().numpy()
-            r_ik2_for_print = np.reshape(r_ik_for_print, (Global.HEIGHT, Global.WIDTH)).astype(int)
-            painted=np.zeros(Global.K_C+1)
-            framePointsNew = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3))
-            mean_value = np.zeros((Global.K_C + 1, 3))
-            mean_value2=np.array([0,0,255])
-            split_lvl_for_print=Global.split_lvl.cpu().numpy()[0:Global.K_C+1]
-            mean_value2=np.zeros((Global.K_C+1,3))
-            for i in range(0,Global.K_C+1):
-                mean_value2[i] = np.array([0, 0, 255])
-                a=3
-
-            framePointsNew2 = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3))
-            framePointsNew3 = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3)).astype(np.int)
-            framePointsNew3[1:Global.HEIGHT+1,1:Global.WIDTH+1]=Global.frame0.astype(np.int)
-
-            for i in range(0, Global.K_C + 1):
-                mean_value[i] = np.mean(Global.frame0[r_ik2_for_print == i], axis=0)
-
-
-            padded=np.pad(r_ik2_for_print, 1, pad_with, padder=0)
-
-
-
-            for i in range(padded.shape[0]):
-                for j in range(padded.shape[1]):
-                    if(padded[i,j]!=0):
-                        framePointsNew[i, j] = mean_value[padded[i, j]]
-                        framePointsNew2[i, j] = mean_value[padded[i, j]]
-                        if(((padded[i+1,j]>0)and(padded[i,j]!=padded[i+1,j])) or ((padded[i,j-1]>0)and(padded[i,j]!=padded[i,j-1])) or ((padded[i,j+1]>0)and(padded[i,j]!=padded[i,j+1])) or ((padded[i-1,j]>0)and(padded[i,j]!=padded[i-1,j]))):
-                            framePointsNew2[i,j]=mean_value2[padded[i,j]]
-                            framePointsNew3[i,j]=mean_value2[padded[i,j]]
-
-            fig = plt.figure()
-            painted=np.zeros(Global.K_C+1)
-            count=0
-            for i in range(0, Global.HEIGHT):
-                for j in range(0, Global.WIDTH):
-                    if(painted[r_ik2_for_print[i,j]]==0):
-                        count=count+1
-                        painted[r_ik2_for_print[i,j]]=1
-
-            framePointsNew=framePointsNew[1:Global.HEIGHT+1,1:Global.WIDTH+1]
-            framePointsNew2=framePointsNew2[1:Global.HEIGHT+1,1:Global.WIDTH+1]
-            framePointsNew3=framePointsNew3[1:Global.HEIGHT+1,1:Global.WIDTH+1]
-
-            if(Global.Plot):
-                framePointsNew = framePointsNew.astype('uint8')
-                framePointsNew3 = framePointsNew3.astype('uint8')
-
-                # plt.imshow((cv2.cvtColor(framePointsNew, cv2.COLOR_BGR2RGB)))
-                cv2_im = cv2.cvtColor(framePointsNew, cv2.COLOR_BGR2RGB)
-                cv2_im_2 = cv2.cvtColor(framePointsNew3, cv2.COLOR_BGR2RGB)
-
-                try:
-                    os.makedirs(str(Global.save_folder) + '/')
-                except FileExistsError:
-                    a=a+1
-                pil_im = Image.fromarray(cv2_im)
-                pil_im2 = Image.fromarray(cv2_im_2)
-
-                pil_im.save('/ps/project/superpixelflow/superpixels-motion-cues/'+str('new_saving') + '/'+ str(Global.csv_file)+'_'+str(it).zfill(3)+'.png',"PNG", optimize=True)
-                pil_im2.save('/ps/project/superpixelflow/superpixels-motion-cues/'+str('new_saving') + '/border/'+ str(Global.csv_file)+'_'+str(it).zfill(3)+'.png',"PNG", optimize=True)
-            #Fixing Single Points Clusters"
             Nk.zero_()
             Nk.index_add_(0, argmax[:, 0], Global.ones)
             c_idx = prev_r_ik_max.view(-1).index_select(0, Global.c_idx)
             c_idx=c_idx.reshape(-1, Global.neig_num)[:,1]
             argmax[:,0]=torch.where(Nk[argmax[:,0]]==1,c_idx,argmax[:,0])
 
-        #print functions!!!
 
 
     end.record()
-    # Waits for everything to finish running
     torch.cuda.synchronize()
     print("Time taken: ",start.elapsed_time(end))
-    if(1):
-        Nk.zero_()
-        Nk.index_add_(0, argmax[:, 0], Global.ones)
-        c_idx = prev_r_ik_max.view(-1).index_select(0, Global.c_idx)
-        c_idx=c_idx.reshape(-1, Global.neig_num)[:,1]
-        argmax[:,0]=torch.where(Nk[argmax[:,0]]==1,c_idx,argmax[:,0])
-        r_ik_for_print = argmax[:,0].cpu().numpy()
-        r_ik2_for_print = np.reshape(r_ik_for_print, (Global.HEIGHT, Global.WIDTH)).astype(int)
-        painted=np.zeros(Global.K_C+1)
-        framePointsNew = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3))
-        mean_value = np.zeros((Global.K_C + 1, 3))
-        mean_value2=np.array([0,0,255])
-        split_lvl_for_print=Global.split_lvl.cpu().numpy()[0:Global.K_C+1]
-        mean_value2=np.zeros((Global.K_C+1,3))
-        for i in range(0,Global.K_C+1):
-            mean_value2[i] = np.array([0, 0, 255])
-            a=3
 
-        framePointsNew2 = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3))
-        framePointsNew3 = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3)).astype(np.int)
-        framePointsNew3[1:Global.HEIGHT+1,1:Global.WIDTH+1]=Global.frame0.astype(np.int)
+    Nk.zero_()
+    Nk.index_add_(0, argmax[:, 0], Global.ones)
+    c_idx = prev_r_ik_max.view(-1).index_select(0, Global.c_idx)
+    c_idx=c_idx.reshape(-1, Global.neig_num)[:,1]
+    argmax[:,0]=torch.where(Nk[argmax[:,0]]==1,c_idx,argmax[:,0])
+    r_ik_for_print = argmax[:,0].cpu().numpy()
+    r_ik2_for_print = np.reshape(r_ik_for_print, (Global.HEIGHT, Global.WIDTH)).astype(int)
+    framePointsNew = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3))
+    mean_value = np.zeros((Global.K_C + 1, 3))
+    mean_value2=np.zeros((Global.K_C+1,3))
+    for i in range(0,Global.K_C+1):
+        mean_value2[i] = np.array([255, 0, 0])
+        a=3
 
-        for i in range(0, Global.K_C + 1):
+    framePointsNew2 = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3))
+    framePointsNew3 = np.zeros((Global.HEIGHT+2, Global.WIDTH+2, 3)).astype(np.int)
+    framePointsNew3[1:Global.HEIGHT+1,1:Global.WIDTH+1]=Global.frame0.astype(np.int)
+
+    for i in range(0, Global.K_C + 1):
+        if(len(Global.frame0[r_ik2_for_print == i])):
             mean_value[i] = np.mean(Global.frame0[r_ik2_for_print == i], axis=0)
 
 
-        padded=np.pad(r_ik2_for_print, 1, pad_with, padder=0)
+    padded=np.pad(r_ik2_for_print, 1, pad_with, padder=0)
 
 
 
-        for i in range(padded.shape[0]):
-            for j in range(padded.shape[1]):
-                if(padded[i,j]!=0):
-                    framePointsNew[i, j] = mean_value[padded[i, j]]
-                    framePointsNew2[i, j] = mean_value[padded[i, j]]
-                    if(((padded[i+1,j]>0)and(padded[i,j]!=padded[i+1,j])) or ((padded[i,j-1]>0)and(padded[i,j]!=padded[i,j-1])) or ((padded[i,j+1]>0)and(padded[i,j]!=padded[i,j+1])) or ((padded[i-1,j]>0)and(padded[i,j]!=padded[i-1,j]))):
-                        framePointsNew2[i,j]=mean_value2[padded[i,j]]
-                        framePointsNew3[i,j]=mean_value2[padded[i,j]]
+    for i in range(padded.shape[0]):
+        for j in range(padded.shape[1]):
+            if(padded[i,j]!=0):
+                framePointsNew[i, j] = mean_value[padded[i, j]]
+                framePointsNew2[i, j] = mean_value[padded[i, j]]
+                if(((padded[i+1,j]>0)and(padded[i,j]!=padded[i+1,j])) or ((padded[i,j-1]>0)and(padded[i,j]!=padded[i,j-1])) or ((padded[i,j+1]>0)and(padded[i,j]!=padded[i,j+1])) or ((padded[i-1,j]>0)and(padded[i,j]!=padded[i-1,j]))):
+                    framePointsNew2[i,j]=mean_value2[padded[i,j]]
+                    framePointsNew3[i,j]=mean_value2[padded[i,j]]
 
-        fig = plt.figure()
-        painted=np.zeros(Global.K_C+1)
-        count=0
-        for i in range(0, Global.HEIGHT):
-            for j in range(0, Global.WIDTH):
-                if(painted[r_ik2_for_print[i,j]]==0):
-                    count=count+1
-                    painted[r_ik2_for_print[i,j]]=1
+    painted=np.zeros(Global.K_C+1)
+    count=0
+    for i in range(0, Global.HEIGHT):
+        for j in range(0, Global.WIDTH):
+            if(painted[r_ik2_for_print[i,j]]==0):
+                count=count+1
+                painted[r_ik2_for_print[i,j]]=1
 
-        framePointsNew=framePointsNew[1:Global.HEIGHT+1,1:Global.WIDTH+1]
-        framePointsNew2=framePointsNew2[1:Global.HEIGHT+1,1:Global.WIDTH+1]
-        framePointsNew3=framePointsNew3[1:Global.HEIGHT+1,1:Global.WIDTH+1]
+    framePointsNew=framePointsNew[1:Global.HEIGHT+1,1:Global.WIDTH+1]
+    framePointsNew3=framePointsNew3[1:Global.HEIGHT+1,1:Global.WIDTH+1]
 
-        if(Global.Plot):
-            framePointsNew = framePointsNew.astype('uint8')
-            framePointsNew3 = framePointsNew3.astype('uint8')
-
-            # plt.imshow((cv2.cvtColor(framePointsNew, cv2.COLOR_BGR2RGB)))
-            cv2_im = cv2.cvtColor(framePointsNew, cv2.COLOR_BGR2RGB)
-            cv2_im_2 = cv2.cvtColor(framePointsNew3, cv2.COLOR_BGR2RGB)
+    if(Global.Plot):
+        framePointsNew = framePointsNew.astype('uint8')
+        framePointsNew3 = framePointsNew3.astype('uint8')
 
 
-            os.makedirs(os.path.join(str(Global.save_folder),'contour'),exist_ok=True)
-            os.makedirs(os.path.join(str(Global.save_folder),'mean'),exist_ok=True)
+        os.makedirs(os.path.join(str(Global.save_folder),'contour'),exist_ok=True)
+        os.makedirs(os.path.join(str(Global.save_folder),'mean'),exist_ok=True)
 
-            pil_im = Image.fromarray(cv2_im)
-            pil_im2 = Image.fromarray(cv2_im_2)
+        pil_im = Image.fromarray(framePointsNew)
+        pil_im2 = Image.fromarray(framePointsNew3)
 
-            pil_im.save(os.path.join(str(Global.save_folder),'mean',(str(Global.csv_file)+'.png')),"PNG", optimize=True)
-            pil_im2.save(os.path.join(str(Global.save_folder),'contour',(str(Global.csv_file)+'.png')),"PNG", optimize=True)
+        pil_im.save(os.path.join(str(Global.save_folder),'mean',(str(Global.csv_file)+'.png')),"PNG", optimize=True)
+        pil_im2.save(os.path.join(str(Global.save_folder),'contour',(str(Global.csv_file)+'.png')),"PNG", optimize=True)
 
-        if(Global.csv):
-            r_ik2 = r_ik2_for_print
-            for i in range(r_ik2.shape[0]):
-                for j in range(r_ik2.shape[1]):
-                    if(i+j==0):
-                        dict={}
-                        count_new=0
-                        b=np.zeros((r_ik2.shape)).astype(np.uint16)
-                    try:
-                        b[i,j]=dict[r_ik2[i,j]]
-                    except Exception as e:
-                        dict[r_ik2[i,j]]=count_new
-                        count_new+=1
-                        b[i,j]=dict[r_ik2[i,j]]
-            K_C=np.unique(b).shape[0]
-            mean_x=np.zeros(K_C+1)
-            mean_y=np.zeros(K_C+1)
-            ind=np.indices((b.shape))
-            for i in range(K_C+1):
-               mean_x[i]=np.mean(ind[0][b==i])
-               mean_y[i]=np.mean(ind[1][b==i])
+    if(Global.csv):
+        r_ik2 = r_ik2_for_print
+        for i in range(r_ik2.shape[0]):
+            for j in range(r_ik2.shape[1]):
+                if(i+j==0):
+                    dict={}
+                    count_new=0
+                    b=np.zeros((r_ik2.shape)).astype(np.uint16)
+                try:
+                    b[i,j]=dict[r_ik2[i,j]]
+                except Exception as e:
+                    dict[r_ik2[i,j]]=count_new
+                    count_new+=1
+                    b[i,j]=dict[r_ik2[i,j]]
+        K_C=np.unique(b).shape[0]
+        mean_x=np.zeros(K_C+1)
+        mean_y=np.zeros(K_C+1)
+        ind=np.indices((b.shape))
+        for i in range(K_C+1):
+           mean_x[i]=np.mean(ind[0][b==i])
+           mean_y[i]=np.mean(ind[1][b==i])
 
 
-            d2=((mean_x[0]-mean_x)*2+(mean_y[0]-mean_y)*2)
-            sorted_args=d2.argsort()
-            c=np.copy(b)*0
-            for i in range(K_C+1):
-               c[b==sorted_args[i]]=K_C-i-1
-            r_ik2=c
-            os.makedirs(os.path.join(str(Global.save_folder),'csv'),exist_ok=True)
-            with open(os.path.join(str(Global.save_folder),'csv',(str(Global.csv_file)+'.csv')), "w") as f:
-                writer = csv.writer(f)
-                writer.writerows(r_ik2)
+        d2=((mean_x[0]-mean_x)*2+(mean_y[0]-mean_y)*2)
+        sorted_args=d2.argsort()
+        c=np.copy(b)*0
+        for i in range(K_C+1):
+           c[b==sorted_args[i]]=K_C-i-1
+        r_ik2=c
+        os.makedirs(os.path.join(str(Global.save_folder),'csv'),exist_ok=True)
+        with open(os.path.join(str(Global.save_folder),'csv',(str(Global.csv_file)+'.csv')), "w") as f:
+            writer = csv.writer(f)
+            writer.writerows(r_ik2)
 
 
 
 
 
-def FindClosestClusterSP_2Frames(X,logdet,c1_temp,pi_temp,SigmaXY,X_C_SIGMA,sum,c_idx,c_idx_9,c_idx_25,distances2,r_ik_5,neig,sumP,X_C,X_C_SIGMA_buf):
+def E_Step(X, logdet, c1_temp, pi_temp, SigmaXY, X_C_SIGMA, sum, c_idx, c_idx_9, c_idx_25, distances2, r_ik_5, neig, sumP, X_C, X_C_SIGMA_buf):
 
     """Computes the distances of the projections points for eace centroid and normalize it using :meth:`AngleImpl.softmax`,
 
@@ -1057,12 +807,11 @@ def FindClosestClusterSP_2Frames(X,logdet,c1_temp,pi_temp,SigmaXY,X_C_SIGMA,sum,
     torch.sum((neig!=0).float(),2,out=sumP)
     r_ik_5.add_(-(Global.Beta_P*sumP))
     (my_help.softmaxTF(r_ik_5, 1,sum))
-    #return distances2
 
 
 
 
-def InitKmeansSP():
+def InitBass():
     """Initialize the clutsters probability for each point.
 
     **Parameters**:
@@ -1128,7 +877,7 @@ Estimation Function
 
 
 
-def EstimateSP_2Frames(X,loc,argmax, Sigma, SigmaInv, Nk, X1, X2_00, X2_01, X2_11,init,Nk_s,X1_s,X2_00_s,X2_01_s,X2_11_s,SigmaXY_s,SigmaInv_s,it,max_it): #Nk_r,X1_r, X2_00_r, X2_01_r,X2_11_r,SigmaXY_r,SigmaXY_l,SigmaInv_r,SigmaInv_l):
+def M_Step(X, loc, argmax, Sigma, SigmaInv, Nk, X1, X2_00, X2_01, X2_11, init, Nk_s, X1_s, X2_00_s, X2_01_s, X2_11_s, SigmaXY_s, SigmaInv_s, it, max_it): #Nk_r,X1_r, X2_00_r, X2_01_r,X2_11_r,SigmaXY_r,SigmaXY_l,SigmaInv_r,SigmaInv_l):
 
     Nk.zero_()
     Nk_s.zero_()
@@ -1159,10 +908,8 @@ def EstimateSP_2Frames(X,loc,argmax, Sigma, SigmaInv, Nk, X1, X2_00, X2_01, X2_1
     Sigma11=torch.add(X2_11,-torch.div(torch.pow(X1[:,1],2),Nk))
 
 
-    Global.C_prior = 55+ (torch.mul(0,-Global.split_lvl[0:Nk.shape[0]]))
     a_prior=Global.split_lvl[0:Nk.shape[0]]
-    if(max_it-it<50):
-        Global.C_prior = 55+ (torch.mul(0,-Global.split_lvl[0:Nk.shape[0]]))
+
 
 
 
@@ -1186,7 +933,6 @@ def EstimateSP_2Frames(X,loc,argmax, Sigma, SigmaInv, Nk, X1, X2_00, X2_01, X2_1
     SIGMAxylab[:,0:2,0:2]=Sigma[:,0:4].view(-1,2,2)
     logdet=torch.log(torch.mul(torch.reciprocal(det),Global.detInt))
     return C,logdet
-    return C,logdet,Sigma,SigmaInv,Nk
 
 
 
@@ -1206,7 +952,7 @@ def EstimateSP_2Frames(X,loc,argmax, Sigma, SigmaInv, Nk, X1, X2_00, X2_01, X2_1
 
 def SuperPixelsSplitMerge():
     X0 = my_help.Create_DataMatrix(Global.frame0)
-    KmeansSplitMerge(X0,X0[:,0:2])
+    Bass(X0, X0[:, 0:2])
 
 
 
@@ -1253,7 +999,7 @@ if __name__ == "__main__":
                         )
     parser.add_argument('--v',
                         action='store_true',
-                        help='save segmentation as CSV file'
+                        help='verbose'
                         )
     args = parser.parse_args()
     Global.Plot = args.vis
@@ -1270,7 +1016,6 @@ if __name__ == "__main__":
     torch.manual_seed(23)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    plt.interactive(False)
     image_files = []
     for extenstion in extensions:
         image_files.extend(glob.glob(os.path.join(directory, extenstion)))
@@ -1279,7 +1024,6 @@ if __name__ == "__main__":
     Global.repeat=False
     count = 0
     for Global.IMAGE1 in image_files:
-        Global.IMAGE1 = '/ps/project/superpixelflow/superpixels-motion-cues/BSR_bsds500/BSR/BSDS500/data/images/train/302003.jpg'
         count = count + 1
         Global.initVariables()
         Global.K_C = args.sp
@@ -1287,15 +1031,3 @@ if __name__ == "__main__":
         Global.repeat=False
         print(Global.csv_file)
         SuperPixelsSplitMerge()
-        count_repeat=0
-        while(Global.repeat==True):
-            count_repeat+=1
-            print("R")
-            print(count_repeat)
-            Global.repeat=False
-            Global.initVariables()
-            Global.K_C-=50*count_repeat
-            Global.ALPHA_MS-=100*count_repeat
-            Global.K_C_HIGH = 1000
-            Global.K_C_LOW =  500
-            SuperPixelsSplitMerge()

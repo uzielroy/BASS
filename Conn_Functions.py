@@ -2,50 +2,10 @@ from BASS import *
 
 
 import numpy as np
-
 import cv2
-import warnings
-
-
-warnings.filterwarnings("ignore")
-
-from IPython.terminal.embed import InteractiveShellEmbed
-
-ip = InteractiveShellEmbed(banner1='Dropping into IPython',
-                           exit_msg='Leaving IPython, back to program.')
 
 def Create_LookupTable():
-    lookup = np.zeros(256)
-    for i in range (0,256):
-        bin=i
-        matrix=np.zeros(9)
-        for j in range(0,8):
-            if(j>=4):
-                matrix[j+1]= bin&1
-            else:
-                matrix[j] = bin & 1
-            bin=bin>>1
-        matrix=matrix.reshape((3,3))
-        matrix=np.uint8(matrix)
-        _, num0 = cv2.connectedComponents(matrix,connectivity=4)
-        num0=np.amax(num0)
-        matrix[1,1]=1
-        _, num1 = cv2.connectedComponents(matrix,connectivity=4)
-        num1=np.amax(num1)
-        matrix=1-matrix
-        _, num0_flip = cv2.connectedComponents(matrix,connectivity=4)
-        num0_flip=np.amax(num0_flip)
-        matrix[1,1]=1
-        _, num1_flip = cv2.connectedComponents(matrix,connectivity=4)
-        num1_flip=np.amax(num1_flip)
-        if((num0_flip==num1_flip) and (num0==num1)):
-                lookup[i]=1
-        else:
-                lookup[i]=0
-    return lookup
-
-
-
+    return np.load('./lookup.npy')
 
 def binary(num, length=8):
     return int(format(num, '#0{}b'.format(length + 2)))
@@ -59,8 +19,6 @@ def Create_Matrix(padded_matrix,mod):
         pixels = padded_matrix.index_select(0, Global.idx_pixels_3).view(9, -1)
     elif (mod == 0):
         pixels = padded_matrix.index_select(0, Global.idx_pixels_4).view(9, -1)
-
-    # pixels=padded_matrix.index_select(0,Global.idx_pixels[mod]).view(9,-1)
     matrix=torch.add(-pixels.unsqueeze(0),pixels.unsqueeze(1))
     matrix=torch.add((matrix==0),(pixels==(-1)))
     return matrix>0
@@ -71,15 +29,11 @@ def Create_Matrix_Sub(padded_matrix_split,mod):
     matrix=((matrix_sub==0))
     return matrix>0
 
-
-
-
-
 def Create_number(matrix):
     temp=torch.index_select(matrix,1,Global.shift_index)
     return (torch.sum(temp.byte()<<Global.shift,dim=1))
 
-def Change_pixel(prev_r_ik,r_ik,index2,r_ik_t5,mod,c_vals,r_ik_tk,range_conn):#,split_prev_r_ik,c_vals_s,r_ik_s):
+def Change_pixel(prev_r_ik,r_ik,index2,r_ik_t5,mod,c_vals,r_ik_tk,range_conn):
 
     padded_matrix = Global.Padding(prev_r_ik)
     padded_matrix = padded_matrix.view(-1)
@@ -106,9 +60,6 @@ def Change_pixel(prev_r_ik,r_ik,index2,r_ik_t5,mod,c_vals,r_ik_tk,range_conn):#,
 
 def Split(prev_r_ik,split_prev_r_ik,c1,c1_idx,idx_rand,clusters_LR,it_split):
     idxL=idx_rand.long()
-    # if (it_split > 0):
-    #     idx_rand.zero_()
-    #     idx_rand[0]=32
     padded_matrixR = Global.Padding0(split_prev_r_ik).reshape(-1)
     padded_matrixL = Global.Padding0(split_prev_r_ik).reshape(-1)
 
@@ -133,11 +84,6 @@ def Split(prev_r_ik,split_prev_r_ik,c1,c1_idx,idx_rand,clusters_LR,it_split):
         new_centerR[:, 1] = new_centerR[:, 1] - 4
         new_centerR[:, 0] = new_centerR[:, 0] + 2
 
-    # if(it_split>0):
-    #     new_centerR[0,0]=20
-    #     new_centerR[0,1]=51
-    #     new_centerL[0,0]=22
-    #     new_centerL[0,1]=51
     new_center_idxR = new_centerR[:, 0] * (Global.WIDTH + 2) + new_centerR[:, 1] + 1  # idx in padded
     new_center_idxL = new_centerL[:,0]*(Global.WIDTH+2)+new_centerL[:,1]+1 #idx in padded
     condL=((new_centerL[:,0]<Global.HEIGHT)&(new_centerL[:,0]>=0)&(new_centerL[:,1]<Global.WIDTH)&(new_centerL[:,1]>=0))
@@ -212,7 +158,8 @@ def Split(prev_r_ik,split_prev_r_ik,c1,c1_idx,idx_rand,clusters_LR,it_split):
     padded_matrix = Global.Padding0(split_prev_r_ik).reshape(-1)
     distances[new_center_idxR.long(),1]=0
     new_idx=torch.where(distances[split_idx,0]<distances[split_idx,1],Global.zeros[:distances[split_idx,0].shape[0]],Global.ones[:distances[split_idx,0].shape[0]])
-    new_cluster_idx=torch.masked_select(split_idx,new_idx.byte())
+
+    new_cluster_idx=torch.masked_select(split_idx,new_idx.bool())
     dataR[:,1].zero_()
     idx=idx.long()
     data2[idx,1]=Global.N_index[0:idx.shape[0]].int()+2+torch.max(split_prev_r_ik.reshape(-1)).int()
@@ -222,14 +169,6 @@ def Split(prev_r_ik,split_prev_r_ik,c1,c1_idx,idx_rand,clusters_LR,it_split):
     padded_matrix[new_cluster_idx.long()]=(dataR[new_cluster_idx.long(),1].long()).clone()
     clusters_LR[:,1].zero_()
     clusters_LR[idx,1]=data2[idx,1]
-    #
-    # if (it_split > 0):
-    #     distances[new_center_idxR.long(), 1] = 0
-    #     split_prev_r_ik = torch.where((split_prev_r_ik.reshape(-1)) == 32, torch.tensor(999).cuda().int(),
-    #                                   torch.tensor(0).cuda().int())
-    #     padded_matrix=torch.where(((padded_matrix==32) +(padded_matrix==1109))>0,padded_matrix,torch.tensor(0).cuda())
-    #     padded_matrix = torch.where((padded_matrix == 32) , torch.tensor(999).cuda(), padded_matrix)
-    #     padded_matrix=torch.where((padded_matrix == 1109), torch.tensor(555).cuda(), padded_matrix)
 
     prev_r_ik_padded =  Global.Padding0(prev_r_ik).reshape(-1)
 
